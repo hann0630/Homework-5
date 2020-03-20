@@ -1,0 +1,93 @@
+---
+title: "Homework 5"
+author: "Natasha Hannan"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rpart)
+library(rpart.plot)
+
+mydata=read.csv("~/BI612-homework/crimedata.csv")
+mydata2=read.csv("~/BI612-homework/crimedata10.csv")
+```
+
+```{r}
+summary(mydata)
+```
+
+```{r}
+set.seed(1337)
+train=sample(x = nrow(mydata), size = 47, replace = FALSE)
+train.data=mydata[sample(x = nrow(mydata), size = 47, replace = FALSE),] 
+```
+
+#3 Regression Tree Summary
+```{r}
+m.rpart=rpart(CrimeRate~Youth+Education+ExpenditureYear+Males+StateSize+YouthUnemployment+BelowWage, data = train.data) 
+summary(m.rpart)
+```
+In this regression tree the most important variables were Expenditure Year, Youth and Below Wage.
+
+#4
+```{r}
+rpart.plot(m.rpart, digits = 3, fallen.leaves = TRUE)
+```
+This diagram is showing that when it comes to crime rate 48.9% of the population has an expenditure year that is smaller than 77 and 51.1% that is greater than 77. Of the population  that has an expenditure year smaller than 77, 25.5% have a state size smaller than 23 while 2.4% have a state size greater than 23. Of the population that has an expenditure year greater than 77, 23.4% has less then 131 young males while 27.7% has more than 131 young males. This shows the likelyhood of crime depending on expenditure year, state size and youth.
+
+#5
+mean crime rate per group:
+ExpenditureYear < 77 & StateSize < 23 = 72.5
+ExpenditureYear < 77 & StateSize > 23 = 97.6
+ExpenditureYear > 77 & Youth < 131 = 105
+ExpenditureYear > 77 & Youth > 131 = 133
+
+#6
+Yes, some predictor variables were excluded from the model. I believe that this is due their lack of importance on the outcome. 
+
+
+#7
+```{r}
+p.rpart=predict(m.rpart, mydata2)
+p.rpart
+```
+
+#8
+```{r}
+cor(p.rpart, mydata2,method="pearson")
+```
+The correlation coefficient from this analysis is 0.6175
+
+#9 
+```{r}
+MAE <- function(actual, predicted)  {
+  mean(abs(actual - predicted))
+}
+
+MAE(predicted = p.rpart,actual = mydata2$CrimeRate)
+```
+I do not believe that this model is good at predicting because it is indicating that our model is predicting on average 24.329 away from the actual value. 
+
+#10
+```{r}
+crime.test=mydata$CrimeRate
+actual=crime.test
+MAE2 <- function(data,indices)  {
+  d<-data[indices]
+  return(mean(abs(actual - d)))
+}
+library(boot)
+guesses=boot(data=crime.test, statistic=MAE2, R=1000)
+{hist(guesses$t)
+abline(v=mean(guesses$t),col="red")}
+mean(guesses$t)
+p.value=length(which((guesses$t<0.5198)==T))/1000
+p.value
+```
+
+#11 the mean absolute error when crime rates are randomly assigned is 32.57256 which is greater than the error from the model. 
+
+#12 There is no significant different from the mean absolute error of the model and random become the p-value was 0. 
+
